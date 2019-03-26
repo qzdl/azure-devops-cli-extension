@@ -22,6 +22,7 @@ def credential_set(organization=None):
     """Set the credential (PAT) to use for a particular organization
     """
     token = _get_pat_token()
+    print(token)
     if organization is not None:
         organization = get_base_url(organization)
         logger.info("Creating connection with personal access token.")
