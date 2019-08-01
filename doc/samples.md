@@ -1,5 +1,8 @@
 # Table of Contents
 
+> IMPORTANT
+> We have moved all the samples documentation from here to <https://aka.ms/azure-devops-cli#how-to-guides>. We will not be maintaing this page going forward.
+
 1. [Log in via Azure DevOps Personal Access Token (PAT)](samples.md#log-in-via-azure-devops-personal-access-token-pat)
 1. [Auto detect and git aliases](samples.md#auto-detect-and-git-aliases)
 1. [Configure output formats](samples.md#configure-output-formats)
@@ -29,27 +32,25 @@ In the above experience, you need to manually enter the token when prompted. How
 There are cases where persisting a personal access token on the machine where the Azure CLI is running is not technically possible or is not secure. In these cases you can get a token from an environment variable.
 To use a personal access token, set the `AZURE_DEVOPS_EXT_PAT` environment variable:
 
-    Windows:
+Windows:
 
-    ```powershell
-      set AZURE_DEVOPS_EXT_PAT=xxxxxxxxxx
-    ```
+```powershell
+  set AZURE_DEVOPS_EXT_PAT=xxxxxxxxxx
+```
 
-    Linux or macOS:
+Linux or macOS:
 
-    ```bash
-      export AZURE_DEVOPS_EXT_PAT=xxxxxxxxxx
-    ```
+```bash
+export AZURE_DEVOPS_EXT_PAT=xxxxxxxxxx
+```
 
-    Replace *xxxxxxxxxx* with the your PAT.
+Replace *xxxxxxxxxx* with the your PAT.
 
-    Now run any command without having to login explicitly. Each command will try to use the PAT in the environment variable for authentication.
+Now run any command without having to login explicitly. Each command will try to use the PAT in the environment variable for authentication.
 
-- Fetch PAT from a file and pass it to login command.
-
-    ```bash
-    cat my_pat_token.txt | az devops login --organization https://dev.azure.com/contoso/
-    ```
+```bash
+cat my_pat_token.txt | az devops login --organization https://dev.azure.com/contoso/
+```
 
 ## Auto detect and git aliases
 
@@ -62,7 +63,7 @@ If you are working in a local check out of a repository, you can simply run `az 
 You can also configure the Azure Devops Extension to add git aliases for common git-based Azure Repos commands like creating or adding reviewers to pull requests. This can be enabled by running the following command:
 
 ```bash
-az devops configure --use-git-alias yes
+az devops configure --use-git-alias true
 ```
 
 This will alias all `az repos` commands to `git repo` and all `az repos pr` commands to `git pr`.
@@ -100,7 +101,7 @@ You can use --open switch to open any artifact in Azure DevOps portal in your de
 For example :
 
 ```bash
-az pipelines build show --build-id 1 --open
+az pipelines build show --id 1 --open
 ```
 
 This will show the details of build with id 1 on command-line and also open it in the default browser.
@@ -153,7 +154,7 @@ if ($devopsFound -eq $False){
 
 ### Use the Azure DevOps Extension with YAML
 
-If you prefer to use YAML to provide your release pipeline configuration, you can use the following example to understand how YAML can be used to install Azure CLI and add the Azure DevOps extension.
+If you prefer to use YAML, you can use the following example to understand how YAML can be used to install Azure CLI and add the Azure DevOps extension.
 
 In the example, you will learn how to add the Azure DevOps extension to Azure CLI and run the build and PR list commands on Linux, Mac OS and Windows hosted agents
 
@@ -166,17 +167,11 @@ steps:
 - script: az extension add -n azure-devops
   displayName: 'Install Azure DevOps Extension'
 
-- script: echo ${AZURE_DEVOPS_CLI_PAT} | az devops login
-  env:
-    AZURE_DEVOPS_CLI_PAT: $(System.AccessToken)
-  displayName: 'Login Azure DevOps Extension'
-
-- script: az devops configure --defaults organization=$(System.TeamFoundationCollectionUri) project=$(System.TeamProject) --use-git-aliases yes
-  displayName: 'Set default Azure DevOps organization and project'
-
 - script: |
     az pipelines build list
-    git pr list
+    az repos pr list
+  env:
+    AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
   displayName: 'Show build list and PRs'
 ```
 
@@ -204,17 +199,11 @@ steps:
   - script: az extension add -n azure-devops
     displayName: 'Install Azure DevOps Extension'
 
-  - script: echo ${AZURE_DEVOPS_CLI_PAT} | az devops login
-    env:
-      AZURE_DEVOPS_CLI_PAT: $(System.AccessToken)
-    displayName: 'Login Azure DevOps Extension'
-
-  - script: az devops configure --defaults organization=https://georgeverghese.visualstudio.com project="Movie Search Web App" --use-git-aliases yes
-    displayName: 'Set default Azure DevOps organization and project'
-
   - script: |
       az pipelines build list
-      git pr list
+      az repos pr list
+    env:
+      AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
     displayName: 'Show build list and PRs'
 ```
 
@@ -242,17 +231,11 @@ steps:
   - script: az extension add -n azure-devops
     displayName: 'Install Azure DevOps Extension'
 
-  - script: echo $(System.AccessToken) | az devops login
-    env:
-      AZURE_DEVOPS_CLI_PAT: $(System.AccessToken)
-    displayName: 'Login Azure DevOps Extension'
-
-  - script: az devops configure --defaults organization=https://georgeverghese.visualstudio.com project="Movie Search Web App" --use-git-aliases yes
-    displayName: 'Set default Azure DevOps organization and project'
-
   - script: |
       az pipelines build list
-      git pr list
+      az repos pr list
+    env:
+      AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
     displayName: 'Show build list and PRs'
 ```
 
@@ -289,7 +272,7 @@ jobs:
 
 You can easily configure branch policies for your repository using the various policy commands. However, the policy commands accept a single scope, i.e., single combination of repository, branch and match type. If you want to apply the same policy across various scopes, you can do that using a policy configuration file.
 
-Say you want to create a manual queue build policy across all branch folders that start with "release" and also on the master branch. To achieve this, execute the following steps:
+Say you want to create a manual queue build policy across all branch folders that start with "release" and also on the branch. To achieve this, execute the following steps:
 
 - Create a policy configuration file for build polcy, including the multiple application scopes:
 
@@ -332,3 +315,47 @@ Refer the [Policy create](https://docs.microsoft.com/en-us/rest/api/azure/devops
 `az repos policy create C:\policyConfiguration.txt`
 
 *Note that the path is provided using '\\' backslash.
+
+## Create an Azure DevOps YAML based multi stage pipeline
+
+You can create and manage YAML based multi stage Azure Pipelines using the `az pipelines` commands.
+
+### Prerequisites
+
+- A Github account, where you can create a repository. If you don't have one, you can [create one for free](https://github.com/)
+
+- An Azure Devops organization. If you don't have one, you can [create one for free](https://docs.microsoft.com/en-us/azure/devops/pipelines/get-started/pipelines-sign-up?view=azure-devops). If your team already has one, then make sure you're an administrator of the Azure DevOps project that you want to use.
+
+- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) along with the [azure-devops extension](../getting_started.md) added.
+
+- You can use Azure Pipelines to build an app written in any language. For this quickstart, we will use Java. To get started, fork the following repository into your GitHub account.
+
+```BASH
+https://github.com/MicrosoftDocs/pipelines-java
+```
+
+To create the pipeline, execute the following steps:
+
+1. Sign in to Azure CLI using your crendentials.
+
+1. Configure your defaults to include the Azure DevOps organization and project
+   `az devops configure --defaults organization=https://dev.azure.com/contosoWebApp project=PaymentModule`
+
+1. Clone your GitHub repository and navigate to the source code directory
+
+1. Run `az pipelines create` command
+   `az pipelines create --name "Contoso.CI"`
+
+1. You will be asked for a service connection which enables Azure DevOps to communicate to GitHub. If you don't have one, you can create one and provide your GitHub credentials.
+
+1. Select the Maven pipeline template from the list of recommended templates.
+
+1. The pipeline YAML is generated. You can open the YAML in your default editor to view and make changes.
+
+1. Select option to commit changes to master. A new run is started. Wait for the run to finish.
+
+## Manage permissions with Azure DevOps CLI
+
+You can update/reset/list permissions for an user or group with the help of security commands.
+
+Refer [Permissions Documentation](permissions.md) for more details on how to get security tokens and manage permissions for a Azure DevOps resource.

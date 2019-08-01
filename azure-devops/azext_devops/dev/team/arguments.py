@@ -6,6 +6,7 @@
 
 from knack.arguments import enum_choice_list
 from azure.cli.core.commands.parameters import get_enum_type, get_three_state_flag
+from azext_devops.dev.common.utils import FILE_ENCODING_TYPES
 from .const import (SERVICE_ENDPOINT_AUTHORIZATION_PERSONAL_ACCESS_TOKEN,
                     SERVICE_ENDPOINT_TYPE_GITHUB,
                     SERVICE_ENDPOINT_AUTHORIZATION_SERVICE_PRINCIPAL,
@@ -25,20 +26,35 @@ _SERVICE_ENDPOINT_AUTHORIZATION_SCHEME = [SERVICE_ENDPOINT_AUTHORIZATION_PERSONA
 
 _HTTP_METHOD_VALUES = ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS', 'PUT', 'HEAD']
 
-_LICENSE_TYPES = ['advanced', 'earlyAdopter', 'express', 'none', 'professional', 'stakeholder']
+_LICENSE_TYPES = ['advanced', 'earlyAdopter', 'express', 'professional', 'stakeholder']
 _RELATIONSHIP_TYPES = ['members', 'memberof']
+_FILE_ENCODING_TYPE_VALUES = FILE_ENCODING_TYPES
 
 
 def load_global_args(context):
     context.argument('organization', options_list=('--organization', '--org'),
-                     help='Azure Devops organization URL. Example: https://dev.azure.com/MyOrganizationName/')
+                     help='Azure DevOps organization URL. You can configure the default organization using '
+                     'az devops configure -d organization=ORG_URL. Required if not configured as '
+                     'default or picked up via git config. Example: https://dev.azure.com/MyOrganizationName/')
     context.argument('detect', arg_type=get_three_state_flag(),
                      help='Automatically detect organization.')
-    context.argument('project', options_list=('--project', '-p'), help='Name or ID of the project.')
+    context.argument('project', options_list=('--project', '-p'),
+                     help='Name or ID of the project. You can configure the default project using '
+                     'az devops configure -d project=NAME_OR_ID. Required if not configured as '
+                     'default or picked up via git config.')
 
 
 # pylint: disable=too-many-statements
 def load_team_arguments(self, _):
+    with self.argument_context('devops login') as context:
+        context.argument('organization',
+                         help='Azure DevOps organization URL. Example: https://dev.azure.com/MyOrganizationName')
+
+    with self.argument_context('devops logout') as context:
+        context.argument('organization',
+                         help='Azure DevOps organization URL. Example: https://dev.azure.com/MyOrganizationName/. '
+                         'If no organization is specified, all organizations will be logged out.')
+
     with self.argument_context('devops configure') as context:
         context.argument('defaults', options_list=('--defaults', '-d'), nargs='*')
         context.argument('use_git_aliases', arg_type=get_three_state_flag())
@@ -75,6 +91,9 @@ def load_team_arguments(self, _):
                          help='Specifies the content type of the response.')
         context.argument('in_file',
                          help='Path and file name to the file that contains the contents of the request.')
+        context.argument('encoding',
+                         help='Encoding of the input file. Used in conjunction with --in-file.',
+                         **enum_choice_list(_FILE_ENCODING_TYPE_VALUES))
         context.argument('out_file',
                          help='Path and file name to the file  for which this function saves the response body.')
         context.argument('area',
@@ -87,7 +106,8 @@ def load_team_arguments(self, _):
     with self.argument_context('devops user') as context:
         context.argument('license_type', arg_type=get_enum_type(_LICENSE_TYPES))
     with self.argument_context('devops user add') as context:
-        context.argument('send_email_invite', help='Whether to send email invite for new user or not.')
+        context.argument('send_email_invite', arg_type=get_three_state_flag(),
+                         help='Whether to send email invite for new user or not.')
 
     with self.argument_context('devops security group create') as context:
         context.argument('project',
@@ -126,8 +146,10 @@ def load_team_arguments(self, _):
                          for given user/group and token.')
 
     with self.argument_context('devops extension') as context:
-        context.argument('include_built_in', help='Include built in extensions.')
-        context.argument('include_disabled', help='Include disabled extensions.')
+        context.argument('include_built_in', arg_type=get_three_state_flag(),
+                         help='Include built in extensions.')
+        context.argument('include_disabled', arg_type=get_three_state_flag(),
+                         help='Include disabled extensions.')
         context.argument('publisher_name', help='Publisher Name')
         context.argument('extension_name', help='Extension Name')
         context.argument('search_query', options_list=('--search-query', '-q'), help='Search term')
@@ -150,6 +172,7 @@ def load_team_arguments(self, _):
     with self.argument_context('devops wiki') as context:
         context.argument('wiki_type', options_list=('--wiki-type', '--type'), **enum_choice_list(_WIKI_TYPE_VALUES))
         context.argument('version', options_list=('--version', '-v'))
+        context.argument('encoding', **enum_choice_list(_FILE_ENCODING_TYPE_VALUES))
 
     with self.argument_context('devops wiki list') as context:
         context.argument('scope', **enum_choice_list(_SCOPE_VALUES))
